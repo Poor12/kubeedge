@@ -76,6 +76,7 @@ func NewDefaultEdgeCoreConfig() *EdgeCoreConfig {
 				CNIBinDir:                   constants.DefaultCNIBinDir,
 				CNICacheDir:                 constants.DefaultCNICacheDir,
 				NetworkPluginMTU:            constants.DefaultNetworkPluginMTU,
+				EnableMetrics:               true,
 			},
 			EdgeHub: &EdgeHub{
 				Enable:            true,
