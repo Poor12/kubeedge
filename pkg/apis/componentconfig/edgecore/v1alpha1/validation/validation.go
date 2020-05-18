@@ -39,7 +39,6 @@ func ValidateEdgeCoreConfiguration(c *v1alpha1.EdgeCoreConfig) field.ErrorList {
 	allErrs = append(allErrs, ValidateModuleDeviceTwin(*c.Modules.DeviceTwin)...)
 	allErrs = append(allErrs, ValidateModuleDBTest(*c.Modules.DBTest)...)
 	allErrs = append(allErrs, ValidateModuleEdgeMesh(*c.Modules.EdgeMesh)...)
-	allErrs = append(allErrs, ValidateModuleEdgeStream(*c.Modules.EdgeStream)...)
 	return allErrs
 }
 
