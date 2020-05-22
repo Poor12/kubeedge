@@ -20,7 +20,7 @@ import (
 	"github.com/kubeedge/kubeedge/pkg/apis/componentconfig/cloudcore/v1alpha1"
 )
 
-var DoneTLSTunnelCerts = make(chan bool)
+var DoneTLSTunnelCerts = make(chan bool, 1)
 
 type cloudHub struct {
 	enable bool
