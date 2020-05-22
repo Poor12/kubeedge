@@ -22,7 +22,7 @@ const (
 	ModuleNameEdgeHub = "websocket"
 )
 
-var HasTLSTunnelCerts = make(chan bool)
+var HasTLSTunnelCerts = make(chan bool, 1)
 
 //EdgeHub defines edgehub object structure
 type EdgeHub struct {
