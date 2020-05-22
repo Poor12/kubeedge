@@ -30,7 +30,6 @@ import (
 	"github.com/gorilla/websocket"
 	"k8s.io/klog"
 
-	"github.com/kubeedge/kubeedge/cloud/pkg/cloudhub"
 	hubconfig "github.com/kubeedge/kubeedge/cloud/pkg/cloudhub/config"
 	"github.com/kubeedge/kubeedge/cloud/pkg/cloudstream/config"
 	"github.com/kubeedge/kubeedge/pkg/stream"
@@ -101,31 +100,25 @@ func (s *TunnelServer) connect(r *restful.Request, w *restful.Response) {
 }
 
 func (s *TunnelServer) Start() {
-	ok := <-cloudhub.DoneTLSTunnelCerts
+
 	s.installDefaultHandler()
 	data, err := ioutil.ReadFile(config.Config.TLSTunnelCAFile)
 	if err != nil {
-		if ok {
-			data = hubconfig.Config.Ca
-			klog.Info("Succeeded in loading TLSTunnelCAFile from the secret")
-		}
+		data = hubconfig.Config.Ca
+		klog.Info("Succeeded in loading TLSTunnelCAFile from the secret")
 	}
 	pool := x509.NewCertPool()
 	pool.AppendCertsFromPEM(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: data}))
 
 	cert, err := ioutil.ReadFile(config.Config.TLSTunnelCertFile)
 	if err != nil {
-		if ok {
-			cert = hubconfig.Config.Cert
-			klog.Info("Succeeded in loading TLSTunnelCertFile from the secret")
-		}
+		cert = hubconfig.Config.Cert
+		klog.Info("Succeeded in loading TLSTunnelCertFile from the secret")
 	}
 	key, err := ioutil.ReadFile(config.Config.TLSTunnelPrivateKeyFile)
 	if err != nil {
-		if ok {
-			key = hubconfig.Config.Key
-			klog.Info("Succeeded in loading TLSTunnelPrivateKeyFile from the secret")
-		}
+		key = hubconfig.Config.Key
+		klog.Info("Succeeded in loading TLSTunnelPrivateKeyFile from the secret")
 	}
 	certificate, err := tls.X509KeyPair(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert}), pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: key}))
 	if err != nil {
