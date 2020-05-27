@@ -28,7 +28,7 @@ import (
 
 // EdgedConnection indicate the connection request to the edged
 type EdgedConnection interface {
-	CreateConnectMessage() (*Message, error)
+	CreateConnectMessage(mt MessageType) (*Message, error)
 	Serve(tunnel SafeWriteTunneler) error
 	CacheTunnelMessage(msg *Message)
 	GetMessageID() uint64
@@ -50,12 +50,12 @@ func (l *EdgedLogsConnection) CacheTunnelMessage(msg *Message) {
 	l.ReadChan <- msg
 }
 
-func (l *EdgedLogsConnection) CreateConnectMessage() (*Message, error) {
+func (l *EdgedLogsConnection) CreateConnectMessage(mt MessageType) (*Message, error) {
 	data, err := json.Marshal(l)
 	if err != nil {
 		return nil, err
 	}
-	return NewMessage(l.MessID, MessageTypeLogsConnect, data), nil
+	return NewMessage(l.MessID, mt, data), nil
 }
 
 func (l *EdgedLogsConnection) String() string {

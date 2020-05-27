@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/kubeedge/kubeedge/pkg/stream"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -65,6 +66,11 @@ func (s *StreamServer) installDebugHandler() {
 		To(s.getExec))
 	ws.Route(ws.POST("/{podNamespace}/{podID}/{uid}/{containerName}").
 		To(s.getExec))
+	s.container.Add(ws)
+
+	ws = new(restful.WebService)
+	ws.Path("/stats/summary")
+	ws.Route(ws.GET("/").To(s.getMetrics))
 	s.container.Add(ws)
 }
 
@@ -115,7 +121,57 @@ func (s *StreamServer) getContainerLogs(r *restful.Request, w *restful.Response)
 		klog.Infof("Delete %s from %s", logConnection.String(), session.String())
 	}()
 
-	if err := logConnection.Serve(); err != nil {
+	if err := logConnection.Serve(stream.MessageTypeLogsConnect); err != nil {
+		err = fmt.Errorf("apiconnection Serve %s in %s error %v",
+			logConnection.String(), session.String(), err)
+		return
+	}
+}
+
+func (s *StreamServer) getMetrics(r *restful.Request, w *restful.Response) {
+	var err error
+
+	defer func() {
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			klog.Errorf(err.Error())
+		}
+	}()
+
+	sessionKey := strings.Split(r.Request.Host, ":")[0]
+	session, ok := s.tunnel.getSession(sessionKey)
+	if !ok {
+		err = fmt.Errorf("Can not find %v session ", sessionKey)
+		return
+	}
+
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.WriteHeader(http.StatusOK)
+
+	if _, ok := w.ResponseWriter.(http.Flusher); !ok {
+		err = fmt.Errorf("Unable to convert %v into http.Flusher, cannot grab metrics data from edge", reflect.TypeOf(w))
+		return
+	}
+	fw := flushwriter.Wrap(w.ResponseWriter)
+
+	logConnection, err := session.AddAPIServerConnection(s, &ContainerLogsConnection{
+		r:            r,
+		flush:        fw,
+		session:      session,
+		ctx:          r.Request.Context(),
+		edgePeerStop: make(chan struct{}),
+	})
+	if err != nil {
+		klog.Errorf("Add apiserver connection into %s error %v", session.String(), err)
+		return
+	}
+
+	defer func() {
+		session.DeleteAPIServerConnection(logConnection)
+		klog.Infof("Delete %s from %s", logConnection.String(), session.String())
+	}()
+
+	if err := logConnection.Serve(stream.MessageTypeMetricConnect); err != nil {
 		err = fmt.Errorf("apiconnection Serve %s in %s error %v",
 			logConnection.String(), session.String(), err)
 		return

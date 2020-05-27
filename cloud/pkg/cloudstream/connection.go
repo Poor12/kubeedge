@@ -35,7 +35,7 @@ import (
 type APIServerConnection interface {
 	fmt.Stringer
 	// SendConnection indicates send EdgedConnection to edge
-	SendConnection() (stream.EdgedConnection, error)
+	SendConnection(mt stream.MessageType) (stream.EdgedConnection, error)
 	// WriteToTunnel indicates writing message to tunnel
 	WriteToTunnel(m *stream.Message) error
 	// WriteToAPIServer indicates writing data to apiserver response
@@ -45,7 +45,7 @@ type APIServerConnection interface {
 	SetMessageID(id uint64)
 	GetMessageID() uint64
 	// Serve indicates handling his own logic
-	Serve() error
+	Serve(mt stream.MessageType) error
 	// SetEdgePeerDone indicates send specifical message to let edge peer exist
 	SetEdgePeerDone()
 	// EdgePeerDone indicates whether edge peer ends
@@ -91,7 +91,7 @@ func (l *ContainerLogsConnection) String() string {
 	return fmt.Sprintf("APIServer_LogsConnection MessageID %v", l.MessageID)
 }
 
-func (l *ContainerLogsConnection) SendConnection() (stream.EdgedConnection, error) {
+func (l *ContainerLogsConnection) SendConnection(mt stream.MessageType) (stream.EdgedConnection, error) {
 	connector := &stream.EdgedLogsConnection{
 		MessID: l.MessageID,
 		URL:    *l.r.Request.URL,
@@ -99,7 +99,7 @@ func (l *ContainerLogsConnection) SendConnection() (stream.EdgedConnection, erro
 	}
 	connector.URL.Scheme = "http"
 	connector.URL.Host = net.JoinHostPort("127.0.0.1", fmt.Sprintf("%v", constants.ServerPort))
-	m, err := connector.CreateConnectMessage()
+	m, err := connector.CreateConnectMessage(mt)
 	if err != nil {
 		return nil, err
 	}
@@ -110,14 +110,14 @@ func (l *ContainerLogsConnection) SendConnection() (stream.EdgedConnection, erro
 	return connector, nil
 }
 
-func (l *ContainerLogsConnection) Serve() error {
+func (l *ContainerLogsConnection) Serve(mt stream.MessageType) error {
 	defer func() {
 		klog.Infof("%s end successful", l.String())
 	}()
 
 	// first send connect message
-	if _, err := l.SendConnection(); err != nil {
-		klog.Errorf("%s send %s info error %v", l.String(), stream.MessageTypeLogsConnect, err)
+	if _, err := l.SendConnection(mt); err != nil {
+		klog.Errorf("%s send %s info error %v", l.String(), mt, err)
 		return err
 	}
 
