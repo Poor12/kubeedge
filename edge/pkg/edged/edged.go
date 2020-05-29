@@ -183,6 +183,7 @@ type edged struct {
 	concurrentConsumers       int
 	// container runtime
 	containerRuntime   kubecontainer.Runtime
+	streamingRuntime   kubecontainer.StreamingRuntime
 	podCache           kubecontainer.Cache
 	os                 kubecontainer.OSInterface
 	resourceAnalyzer   serverstats.ResourceAnalyzer
@@ -549,7 +550,7 @@ func newEdged(enable bool) (*edged, error) {
 		ed.machineInfo = &machineInfo
 	}
 
-	containerRuntime, err := kuberuntime.NewKubeGenericRuntimeManager(
+	runtime, err := kuberuntime.NewKubeGenericRuntimeManager(
 		recorder,
 		ed.livenessManager,
 		ed.startupManager,
@@ -575,6 +576,8 @@ func newEdged(enable bool) (*edged, error) {
 	if err != nil {
 		return nil, fmt.Errorf("New generic runtime manager failed, err: %s", err.Error())
 	}
+	containerRuntime := runtime
+	streamingRuntime := runtime
 
 	if edgedconfig.Config.CgroupsPerQOS && edgedconfig.Config.CgroupRoot == "" {
 		klog.Info("--cgroups-per-qos enabled, but --cgroup-root was not specified.  defaulting to /")
@@ -601,6 +604,7 @@ func newEdged(enable bool) (*edged, error) {
 	}
 
 	ed.containerRuntime = containerRuntime
+	ed.streamingRuntime = streamingRuntime
 	ed.runner = containerRuntime
 	ed.containerManager = containerManager
 	ed.runtimeService = runtimeService

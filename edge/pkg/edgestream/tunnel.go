@@ -80,7 +80,9 @@ func (s *TunnelSession) ServeConnection(m *stream.Message) {
 			klog.Errorf("Serve Logs connection error %s", m.String())
 		}
 	case stream.MessageTypeExecConnect:
-		panic("TODO")
+		if err := s.serveLogsConnection(m); err != nil {
+			klog.Errorf("Serve Logs connection error %s", m.String())
+		}
 	case stream.MessageTypeMetricConnect:
 		if err := s.serveMetricsConnection(m); err != nil {
 			klog.Errorf("Serve Metrics connection error %s", m.String())
